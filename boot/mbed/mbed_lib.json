@@ -178,6 +178,12 @@
         "xip-secondary-slot-address": {
             "help": "Specify start address for secondary slot address in XIP-accessible memory. This is required if direct-xip is enabled.",
             "value": null
+        },
+        "max-align": {
+            "help": "Specify magic and boot info flash alignment",
+            "macro_name": "MCUBOOT_BOOT_MAX_ALIGN",
+            "accepted_values": [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096],
+            "value": 8
         }
     }
 }
