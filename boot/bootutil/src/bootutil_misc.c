@@ -151,7 +151,7 @@ boot_status_off(const struct flash_area *fap)
 static inline uint32_t
 boot_magic_off(const struct flash_area *fap)
 {
-    return flash_area_get_size(fap) - BOOT_MAGIC_SZ;
+    return flash_area_get_size(fap) - BOOT_MAGIC_ALIGN_SIZE;
 }
 
 static inline uint32_t
