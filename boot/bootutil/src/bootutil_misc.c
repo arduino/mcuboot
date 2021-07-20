@@ -228,7 +228,7 @@ boot_find_status(int image_index, const struct flash_area **fap)
             return rc;
         }
 
-        if (BOOT_MAGIC_GOOD == boot_magic_decode(magic)) {
+        if (memcmp(magic, boot_img_magic, BOOT_MAGIC_SZ) == 0) {
             return 0;
         }
 
