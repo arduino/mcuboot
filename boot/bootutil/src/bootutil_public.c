@@ -315,7 +315,9 @@ boot_read_swap_state_by_id(int flash_area_id, struct boot_swap_state *state)
 int
 boot_write_magic(const struct flash_area *fap)
 {
+    uint8_t buf[BOOT_MAX_ALIGN];
     uint32_t off;
+    uint8_t erased_val;
     int rc;
 
     off = boot_magic_off(fap);
@@ -323,7 +325,13 @@ boot_write_magic(const struct flash_area *fap)
     BOOT_LOG_DBG("writing magic; fa_id=%d off=0x%lx (0x%lx)",
                  flash_area_get_id(fap), (unsigned long)off,
                  (unsigned long)(flash_area_get_off(fap) + off));
-    rc = flash_area_write(fap, off, boot_img_magic, BOOT_MAGIC_SZ);
+
+    erased_val = flash_area_erased_val(fap);
+
+    memcpy(buf, boot_img_magic, BOOT_MAGIC_SZ);
+    memset(&buf[BOOT_MAGIC_SZ], erased_val, BOOT_MAX_ALIGN - BOOT_MAGIC_SZ);
+
+    rc = flash_area_write(fap, off, buf, BOOT_MAGIC_ALIGN_SIZE);
     if (rc != 0) {
         return BOOT_EFLASH;
     }
