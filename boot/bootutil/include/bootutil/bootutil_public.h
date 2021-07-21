@@ -255,6 +255,15 @@ int
 boot_read_swap_state(const struct flash_area *fa,
                      struct boot_swap_state *state);
 
+/**
+ * Populates the version information of the
+ * currently installed primary application
+ *
+ * @param[in] version Destination version structure buffer
+ * @return 0 on success; nonzero on failure.
+ */
+int boot_get_current_version(struct image_version *version);
+
 #define BOOT_MAGIC_ARR_SZ \
     (sizeof boot_img_magic / sizeof boot_img_magic[0])
 
