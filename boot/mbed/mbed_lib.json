@@ -184,6 +184,36 @@
             "macro_name": "MCUBOOT_BOOT_MAX_ALIGN",
             "accepted_values": [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096],
             "value": 8
+        },
+        "application-hooks": {
+            "help": "Enable application hooks running pre and post MCUboot slot check.",
+            "macro_name": " MCUBOOT_APPLICATION_HOOKS",
+            "accepted_values": [true, null],
+            "value": null
+        },
+        "application-littlefs": {
+            "help": "Enable application littleFS support.",
+            "macro_name": "MCUBOOT_APPLICATION_LITTLEFS",
+            "accepted_values": [true, null],
+            "value": null
+        },
+        "application-sdcard": {
+            "help": "Enable application sdcard support.",
+            "macro_name": "MCUBOOT_APPLICATION_SDCARD",
+            "accepted_values": [true, null],
+            "value": null
+        },
+        "application-dfu": {
+            "help": "Enable application dfu support.",
+            "macro_name": "MCUBOOT_APPLICATION_DFU",
+            "accepted_values": [true, null],
+            "value": null
+        },
+        "include-keys": {
+            "help": "Include default keys into the bootloader binary.",
+            "macro_name": "MCUBOOT_INCLUDE_KEYS",
+            "accepted_values": [true, null],
+            "value": null
         }
     }
 }
