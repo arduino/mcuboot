@@ -498,12 +498,11 @@ class Image():
                # type ImageHdr struct {
                'I' +     # Magic    uint32
                'I' +     # LoadAddr uint32
-               'H' +     # HdrSz    uint16
-               'H' +     # PTLVSz   uint16
+               'I' +     # HdrSz    uint32
+               'I' +     # PTLVSz   uint32
                'I' +     # ImgSz    uint32
                'I' +     # Flags    uint32
-               'BBHI' +  # Vers     ImageVersion
-               'I'       # Pad1     uint32
+               'BBHI'    # Vers     ImageVersion
                )  # }
         assert struct.calcsize(fmt) == IMAGE_HEADER_SIZE
         header = struct.pack(fmt,
@@ -516,8 +515,7 @@ class Image():
                 self.version.major,
                 self.version.minor or 0,
                 self.version.revision or 0,
-                self.version.build or 0,
-                0)  # Pad1
+                self.version.build or 0)
         self.payload = bytearray(self.payload)
         self.payload[:len(header)] = header
 
