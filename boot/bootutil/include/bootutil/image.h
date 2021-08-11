@@ -129,12 +129,11 @@ struct image_dependency {
 struct image_header {
     uint32_t ih_magic;
     uint32_t ih_load_addr;
-    uint16_t ih_hdr_size;           /* Size of image header (bytes). */
-    uint16_t ih_protect_tlv_size;   /* Size of protected TLV area (bytes). */
+    uint32_t ih_hdr_size;           /* Size of image header (bytes). */
+    uint32_t ih_protect_tlv_size;   /* Size of protected TLV area (bytes). */
     uint32_t ih_img_size;           /* Does not include header. */
     uint32_t ih_flags;              /* IMAGE_F_[...]. */
     struct image_version ih_ver;
-    uint32_t _pad1;
 };
 
 /** Image TLV header.  All fields in little endian. */

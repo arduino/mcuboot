@@ -68,7 +68,7 @@ bootutil_img_hash(struct enc_key_data *enc_state, int image_index,
     bootutil_sha256_context sha256_ctx;
     uint32_t blk_sz;
     uint32_t size;
-    uint16_t hdr_size;
+    uint32_t hdr_size;
     uint32_t off;
     int rc;
     uint32_t blk_off;

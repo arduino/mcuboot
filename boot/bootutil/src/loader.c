@@ -919,7 +919,7 @@ boot_copy_region(struct boot_loader_state *state,
     uint32_t tlv_off;
     size_t blk_off;
     struct image_header *hdr;
-    uint16_t idx;
+    uint32_t idx;
     uint32_t blk_sz;
     uint8_t image_index;
 #endif
@@ -970,7 +970,12 @@ boot_copy_region(struct boot_loader_state *state,
                 if (off + bytes_copied < hdr->ih_hdr_size) {
                     /* do not decrypt header */
                     blk_off = 0;
-                    blk_sz = chunk_sz - hdr->ih_hdr_size;
+                    if (hdr->ih_hdr_size < chunk_sz) {
+                      blk_sz = chunk_sz - hdr->ih_hdr_size;
+                    } else {
+                      blk_sz = 0;
+                    }
+                    /* FIXME: idx variable could be grater than buffer size */
                     idx = hdr->ih_hdr_size;
                 } else {
                     blk_off = ((off + bytes_copied) - hdr->ih_hdr_size) & 0xf;
