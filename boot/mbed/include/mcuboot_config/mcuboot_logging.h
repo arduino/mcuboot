@@ -22,6 +22,8 @@
 #ifndef __MCUBOOT_LOGGING_H__
 #define __MCUBOOT_LOGGING_H__
 
+#include <stdio.h>
+
 #define MCUBOOT_LOG_LEVEL_OFF      0
 #define MCUBOOT_LOG_LEVEL_ERROR    1
 #define MCUBOOT_LOG_LEVEL_WARNING  2
@@ -39,7 +41,6 @@
 #if MCUBOOT_LOG_LEVEL == MCUBOOT_LOG_LEVEL_OFF
 #define MBED_CONF_MBED_TRACE_ENABLE 0
 #else
-#define MBED_CONF_MBED_TRACE_ENABLE 1
 #define MCUBOOT_HAVE_LOGGING
 #endif
 
@@ -61,25 +62,53 @@
 #define MCUBOOT_LOG_MODULE_REGISTER(domain) /* ignore */
 
 #if MCUBOOT_LOG_LEVEL >= MCUBOOT_LOG_LEVEL_ERROR
+#if MBED_CONF_MBED_TRACE_ENABLE
 #define MCUBOOT_LOG_ERR tr_error
+#else
+#define MCUBOOT_LOG_ERR(_fmt, ...)                                      \
+    do {                                                                \
+        printf("E-" _fmt "\n", ##__VA_ARGS__);                          \
+    } while (0)
+#endif
 #else
 #define MCUBOOT_LOG_ERR(...) IGNORE(__VA_ARGS__)
 #endif
 
 #if MCUBOOT_LOG_LEVEL >= MCUBOOT_LOG_LEVEL_WARNING
+#if MBED_CONF_MBED_TRACE_ENABLE
 #define MCUBOOT_LOG_WRN tr_warn
+#else
+#define MCUBOOT_LOG_WRN(_fmt, ...)                                      \
+    do {                                                                \
+        printf("W-" _fmt "\n", ##__VA_ARGS__);                          \
+    } while (0)
+#endif
 #else
 #define MCUBOOT_LOG_WRN(...) IGNORE(__VA_ARGS__)
 #endif
 
 #if MCUBOOT_LOG_LEVEL >= MCUBOOT_LOG_LEVEL_INFO
+#if MBED_CONF_MBED_TRACE_ENABLE
 #define MCUBOOT_LOG_INF tr_info
+#else
+#define MCUBOOT_LOG_INF(_fmt, ...)                                      \
+    do {                                                                \
+        printf("I-" _fmt "\n", ##__VA_ARGS__);                          \
+    } while (0)
+#endif
 #else
 #define MCUBOOT_LOG_INF(...) IGNORE(__VA_ARGS__)
 #endif
 
 #if MCUBOOT_LOG_LEVEL >= MCUBOOT_LOG_LEVEL_DEBUG
+#if MBED_CONF_MBED_TRACE_ENABLE
 #define MCUBOOT_LOG_DBG tr_debug
+#else
+#define MCUBOOT_LOG_DBG(_fmt, ...)                                      \
+    do {                                                                \
+        printf("D-" _fmt "\n", ##__VA_ARGS__);                          \
+    } while (0)
+#endif
 #else
 #define MCUBOOT_LOG_DBG(...) IGNORE(__VA_ARGS__)
 #endif

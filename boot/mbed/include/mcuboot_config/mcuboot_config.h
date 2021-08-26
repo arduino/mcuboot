@@ -92,4 +92,9 @@
     do {                   \
     } while (0)
 
+/*
+ * Enable MCUBoot logging
+ */
+#define MCUBOOT_HAVE_LOGGING
+
 #endif /* __MCUBOOT_CONFIG_H__ */
