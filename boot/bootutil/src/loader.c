@@ -1590,8 +1590,10 @@ boot_complete_partial_swap(struct boot_loader_state *state,
         BOOT_LOG_ERR("panic!");
         assert(0);
 
+#if ! MCUBOOT_APPLICATION_HOOKS
         /* Loop forever... */
         while (1) {}
+#endif
     }
 
     return rc;
@@ -2019,8 +2021,10 @@ context_boot_go(struct boot_loader_state *state, struct boot_rsp *rsp)
             BOOT_LOG_ERR("panic!");
             assert(0);
 
+#if ! MCUBOOT_APPLICATION_HOOKS
             /* Loop forever... */
             FIH_PANIC;
+#endif
         }
     }
 
