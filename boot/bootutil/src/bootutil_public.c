@@ -256,7 +256,7 @@ int
 boot_read_swap_state(const struct flash_area *fap,
                      struct boot_swap_state *state)
 {
-    uint32_t magic[BOOT_MAGIC_ARR_SZ];
+    uint32_t magic[BOOT_MAGIC_ARR_SZ] = {0xFF};
     uint32_t off;
     uint8_t swap_info;
     int rc;
