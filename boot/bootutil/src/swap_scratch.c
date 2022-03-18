@@ -717,7 +717,13 @@ swap_run(struct boot_loader_state *state, struct boot_status *bs,
     }
 
     swap_idx = 0;
+#if  MCUBOOT_APPLICATION_HOOKS
+    int last_sector_idx_cp = last_sector_idx;
+#endif
     while (last_sector_idx >= 0) {
+#if  MCUBOOT_APPLICATION_HOOKS
+        BOOT_LOG_INF("Swap sector %d of %d", swap_idx + 1, last_sector_idx_cp + 1 );
+#endif
         sz = boot_copy_sz(state, last_sector_idx, &first_sector_idx);
         if (swap_idx >= (bs->idx - BOOT_STATUS_IDX_0)) {
             boot_swap_sectors(first_sector_idx, sz, state, bs);
