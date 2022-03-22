@@ -332,7 +332,7 @@ boot_write_enc_key(const struct flash_area *fap, uint8_t slot,
 #if MCUBOOT_SWAP_SAVE_ENCTLV
     rc = flash_area_write(fap, off, bs->enctlv[slot], BOOT_ENC_TLV_ALIGN_SIZE);
 #else
-    rc = flash_area_write(fap, off, bs->enckey[slot], BOOT_ENC_KEY_SIZE);
+    rc = flash_area_write(fap, off, bs->enckey[slot], BOOT_ENC_KEY_ALIGN_SIZE);
 #endif
     if (rc != 0) {
         return BOOT_EFLASH;
