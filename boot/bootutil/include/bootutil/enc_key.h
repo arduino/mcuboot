@@ -33,11 +33,15 @@
 #include "bootutil/crypto/aes_ctr.h"
 #include "bootutil/image.h"
 #include "bootutil/enc_key_public.h"
+#include "bootutil/bootutil.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#define BOOT_ENC_KEY_SIZE       16
+#define BOOT_ENC_KEY_ALIGN_SIZE \
+    ((((BOOT_ENC_KEY_SIZE - 1) / BOOT_MAX_ALIGN) + 1) * BOOT_MAX_ALIGN)
 #define BOOT_ENC_KEY_SIZE_BITS  (BOOT_ENC_KEY_SIZE * 8)
 
 #define BOOT_ENC_TLV_ALIGN_SIZE \
