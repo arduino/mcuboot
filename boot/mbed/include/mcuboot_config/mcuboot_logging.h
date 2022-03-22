@@ -58,6 +58,11 @@
 #include "mbed_trace.h"
 #include "bootutil/ignore.h"
 
+#define PRINT_IF(condition,format,args...)  \
+        if(condition) {                     \
+            printf(format, ##args);         \
+        }
+
 #define MCUBOOT_LOG_MODULE_DECLARE(domain)  /* ignore */
 #define MCUBOOT_LOG_MODULE_REGISTER(domain) /* ignore */
 
@@ -67,7 +72,8 @@
 #else
 #define MCUBOOT_LOG_ERR(_fmt, ...)                                      \
     do {                                                                \
-        printf("E-" _fmt "\n", ##__VA_ARGS__);                          \
+        extern bool debug_enabled;                                      \
+        PRINT_IF(debug_enabled, "E-" _fmt "\n", ##__VA_ARGS__);         \
     } while (0)
 #endif
 #else
@@ -80,7 +86,8 @@
 #else
 #define MCUBOOT_LOG_WRN(_fmt, ...)                                      \
     do {                                                                \
-        printf("W-" _fmt "\n", ##__VA_ARGS__);                          \
+        extern bool debug_enabled;                                      \
+        PRINT_IF(debug_enabled,"W-" _fmt "\n", ##__VA_ARGS__);          \
     } while (0)
 #endif
 #else
@@ -93,7 +100,8 @@
 #else
 #define MCUBOOT_LOG_INF(_fmt, ...)                                      \
     do {                                                                \
-        printf("I-" _fmt "\n", ##__VA_ARGS__);                          \
+        extern bool debug_enabled;                                      \
+        PRINT_IF(debug_enabled, "I-" _fmt "\n", ##__VA_ARGS__);         \
     } while (0)
 #endif
 #else
@@ -106,7 +114,8 @@
 #else
 #define MCUBOOT_LOG_DBG(_fmt, ...)                                      \
     do {                                                                \
-        printf("D-" _fmt "\n", ##__VA_ARGS__);                          \
+        extern bool debug_enabled;                                      \
+        PRINT_IF(debug_enabled, "D-" _fmt "\n", ##__VA_ARGS__);         \
     } while (0)
 #endif
 #else
