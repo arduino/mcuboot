@@ -82,6 +82,14 @@ extern "C" {
 #define BOOT_MAGIC_ALIGN_SIZE   BOOT_MAGIC_SZ
 #endif
 
+#ifdef MCUBOOT_SWAP_BUF_SIZE
+#define BOOT_SWAP_BUF_SIZE MCUBOOT_SWAP_BUF_SIZE
+#elif BOOT_MAX_ALIGN > 1024
+#define BOOT_SWAP_BUF_SIZE BOOT_MAX_ALIGN
+#else
+#define BOOT_SWAP_BUF_SIZE 1024
+#endif
+
 #define BOOT_MAGIC_GOOD     1
 #define BOOT_MAGIC_BAD      2
 #define BOOT_MAGIC_UNSET    3
