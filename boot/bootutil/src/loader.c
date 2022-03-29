@@ -924,6 +924,10 @@ boot_copy_region(struct boot_loader_state *state,
     uint8_t image_index;
 #endif
 
+#ifdef MCUBOOT_ENC_SCRATCH
+size_t scratch_blk_off;
+#endif
+
     TARGET_STATIC uint8_t buf[BOOT_SWAP_BUF_SIZE] __attribute__((aligned(4)));
 
 #if !defined(MCUBOOT_ENC_IMAGES)
@@ -942,6 +946,15 @@ boot_copy_region(struct boot_loader_state *state,
         if (rc != 0) {
             return BOOT_EFLASH;
         }
+#ifdef MCUBOOT_ENC_SCRATCH
+        scratch_blk_off = 0;
+        if (flash_area_get_id(fap_src) == FLASH_AREA_IMAGE_SCRATCH &&
+            boot_enc_valid(BOOT_CURR_ENC(state), image_index, fap_src)) {
+            boot_encrypt(BOOT_CURR_ENC(state), image_index, fap_src,
+                        (off_src + bytes_copied), chunk_sz,
+                        scratch_blk_off, buf);
+        }
+#endif
 
 #ifdef MCUBOOT_ENC_IMAGES
         image_index = BOOT_CURR_IMG(state);
@@ -999,6 +1012,15 @@ boot_copy_region(struct boot_loader_state *state,
                             blk_off, &buf[idx]);
                 }
             }
+        }
+#endif
+
+#ifdef MCUBOOT_ENC_SCRATCH
+        if (flash_area_get_id(fap_dst) == FLASH_AREA_IMAGE_SCRATCH &&
+            boot_enc_valid(BOOT_CURR_ENC(state), image_index, fap_dst)) {
+            boot_encrypt(BOOT_CURR_ENC(state), image_index, fap_dst,
+                        (off_dst + bytes_copied), chunk_sz,
+                        scratch_blk_off, buf);
         }
 #endif
 
@@ -1257,6 +1279,15 @@ boot_swap_image(struct boot_loader_state *state, struct boot_status *bs)
             } else {
                 rc = 0;
             }
+
+#ifdef MCUBOOT_ENC_SCRATCH
+            rc = boot_enc_init(BOOT_CURR_ENC(state), 2);
+            assert(rc == 0);
+
+            rc = boot_enc_set_key(BOOT_CURR_ENC(state), 2, bs);
+            assert(rc == 0);
+#endif
+
         } else {
             memset(bs->enckey[1], 0xff, BOOT_ENC_KEY_SIZE);
         }
@@ -1290,6 +1321,11 @@ boot_swap_image(struct boot_loader_state *state, struct boot_status *bs)
 
             if (i != BOOT_ENC_KEY_SIZE) {
                 boot_enc_set_key(BOOT_CURR_ENC(state), slot, bs);
+#ifdef MCUBOOT_ENC_SCRATCH
+                if(slot == BOOT_SECONDARY_SLOT) {
+                    boot_enc_set_key(BOOT_CURR_ENC(state), 2, bs);
+                }
+#endif
             }
         }
 #endif

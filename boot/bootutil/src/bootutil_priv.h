@@ -216,7 +216,11 @@ struct boot_loader_state {
     uint32_t write_sz;
 
 #if defined(MCUBOOT_ENC_IMAGES)
+#ifdef MCUBOOT_ENC_SCRATCH
+    struct enc_key_data enc[BOOT_IMAGE_NUMBER][BOOT_NUM_SLOTS + 1];
+#else
     struct enc_key_data enc[BOOT_IMAGE_NUMBER][BOOT_NUM_SLOTS];
+#endif
 #endif
 
 #if (BOOT_IMAGE_NUMBER > 1)
