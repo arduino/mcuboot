@@ -214,6 +214,12 @@
             "macro_name": "MCUBOOT_INCLUDE_KEYS",
             "accepted_values": [true, null],
             "value": null
+        },
+        "swap-buf-size": {
+            "help": "Specify swap ram buffer size.",
+            "macro_name": "MCUBOOT_SWAP_BUF_SIZE",
+            "accepted_values": [1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072],
+            "value": null
         }
     }
 }
