@@ -950,9 +950,11 @@ size_t scratch_blk_off;
         scratch_blk_off = 0;
         if (flash_area_get_id(fap_src) == FLASH_AREA_IMAGE_SCRATCH &&
             boot_enc_valid(BOOT_CURR_ENC(state), image_index, fap_src)) {
+            printf("rb %d -> %d 0x%02X 0x%02X 0x%02X 0x%02X 0x%08X 0x%08X 0x%08X\n", flash_area_get_id(fap_src), flash_area_get_id(fap_dst), buf[0], buf[1], buf[2], buf[3],  off_src + bytes_copied, scratch_blk_off, chunk_sz);
             boot_encrypt(BOOT_CURR_ENC(state), image_index, fap_src,
                         (off_src + bytes_copied), chunk_sz,
                         scratch_blk_off, buf);
+            printf("ra %d -> %d 0x%02X 0x%02X 0x%02X 0x%02X\n", flash_area_get_id(fap_src), flash_area_get_id(fap_dst), buf[0], buf[1], buf[2], buf[3]);
         }
 #endif
 
@@ -994,6 +996,7 @@ size_t scratch_blk_off;
                     idx = 0;
                     blk_sz = chunk_sz;
                     blk_off = (abs_off - hdr->ih_hdr_size) & 0xf;
+                    printf("abs off 0x%08X header 0x%08X\n", abs_off, hdr->ih_hdr_size);
                 }
 
                 if (blk_sz > 0)
@@ -1007,9 +1010,11 @@ size_t scratch_blk_off;
                             blk_sz = tlv_off - abs_off;
                         }
                     }
+                    printf("bb %d -> %d 0x%02X 0x%02X 0x%02X 0x%02X 0x%08X 0x%08X 0x%08X\n", flash_area_get_id(fap_src),  flash_area_get_id(fap_dst), buf[0], buf[1], buf[2], buf[3], (abs_off + idx) - hdr->ih_hdr_size, blk_off, blk_sz);
                     boot_encrypt(BOOT_CURR_ENC(state), image_index, fap_src,
                             (abs_off + idx) - hdr->ih_hdr_size, blk_sz,
                             blk_off, &buf[idx]);
+                    printf("aa %d -> %d 0x%02X 0x%02X 0x%02X 0x%02X\n", flash_area_get_id(fap_src),  flash_area_get_id(fap_dst), buf[0], buf[1], buf[2], buf[3]);
                 }
             }
         }
@@ -1018,9 +1023,11 @@ size_t scratch_blk_off;
 #ifdef MCUBOOT_ENC_SCRATCH
         if (flash_area_get_id(fap_dst) == FLASH_AREA_IMAGE_SCRATCH &&
             boot_enc_valid(BOOT_CURR_ENC(state), image_index, fap_dst)) {
+            printf("wb %d -> %d 0x%02X 0x%02X 0x%02X 0x%02X 0x%08X 0x%08X 0x%08X\n",  flash_area_get_id(fap_src), flash_area_get_id(fap_dst), buf[0], buf[1], buf[2], buf[3], off_dst + bytes_copied, scratch_blk_off, chunk_sz);
             boot_encrypt(BOOT_CURR_ENC(state), image_index, fap_dst,
                         (off_dst + bytes_copied), chunk_sz,
                         scratch_blk_off, buf);
+            printf("wa %d -> %d 0x%02X 0x%02X 0x%02X 0x%02X\n",  flash_area_get_id(fap_src), flash_area_get_id(fap_dst), buf[0], buf[1], buf[2], buf[3]);
         }
 #endif
 
@@ -1233,6 +1240,7 @@ boot_swap_image(struct boot_loader_state *state, struct boot_status *bs)
     image_index = BOOT_CURR_IMG(state);
 
     if (boot_status_is_reset(bs)) {
+        printf("boot status reset\n");
         /*
          * No swap ever happened, so need to find the largest image which
          * will be used to determine the amount of sectors to swap.
@@ -1303,6 +1311,7 @@ boot_swap_image(struct boot_loader_state *state, struct boot_status *bs)
          * If a swap was under way, the swap_size should already be present
          * in the trailer...
          */
+        printf("swap under the way\n");
         rc = boot_read_swap_size(image_index, &bs->swap_size);
         assert(rc == 0);
 
