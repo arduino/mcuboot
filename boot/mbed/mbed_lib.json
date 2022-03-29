@@ -220,6 +220,12 @@
             "macro_name": "MCUBOOT_SWAP_BUF_SIZE",
             "accepted_values": [1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072],
             "value": null
+        },
+        "encrypt-scratch": {
+            "help": "Re-encrypt data before writing into scratch flash area",
+            "macro_name": "MCUBOOT_ENC_SCRATCH",
+            "accepted_values": [true, null],
+            "value": null
         }
     }
 }
