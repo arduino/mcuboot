@@ -540,6 +540,7 @@ boot_swap_sectors(int idx, uint32_t sz, struct boot_loader_state *state,
     assert (rc == 0);
 
     if (bs->state == BOOT_STATUS_STATE_0) {
+        BOOT_LOG_INF("Boot state %d", bs->state-1);
         BOOT_LOG_DBG("erasing scratch area");
         rc = boot_erase_region(fap_scratch, 0, flash_area_get_size(fap_scratch));
         assert(rc == 0);
@@ -580,6 +581,7 @@ boot_swap_sectors(int idx, uint32_t sz, struct boot_loader_state *state,
     }
 
     if (bs->state == BOOT_STATUS_STATE_1) {
+        BOOT_LOG_INF("Boot state %d", bs->state-1);
         rc = boot_erase_region(fap_secondary_slot, img_off, sz);
         assert(rc == 0);
 
@@ -601,6 +603,7 @@ boot_swap_sectors(int idx, uint32_t sz, struct boot_loader_state *state,
     }
 
     if (bs->state == BOOT_STATUS_STATE_2) {
+        BOOT_LOG_INF("Boot state %d", bs->state-1);
         rc = boot_erase_region(fap_primary_slot, img_off, sz);
         assert(rc == 0);
 
