@@ -1287,15 +1287,15 @@ boot_swap_image(struct boot_loader_state *state, struct boot_status *bs)
             } else {
                 rc = 0;
             }
-
 #ifdef MCUBOOT_ENC_SCRATCH
-            rc = boot_enc_init(BOOT_CURR_ENC(state), 2);
-            assert(rc == 0);
-
-            rc = boot_enc_set_key(BOOT_CURR_ENC(state), 2, bs);
-            assert(rc == 0);
+            if(BOOT_CURR_ENC(state)[1].valid) {
+                memcpy(bs->enckey[2], bs->enckey[1], BOOT_ENC_KEY_SIZE);
+                rc = boot_enc_init(BOOT_CURR_ENC(state), 2);
+                assert(rc == 0);
+                rc = boot_enc_set_key(BOOT_CURR_ENC(state), 2, bs);
+                assert(rc == 0);
+            }
 #endif
-
         } else {
             memset(bs->enckey[1], 0xff, BOOT_ENC_KEY_SIZE);
         }
@@ -1332,6 +1332,7 @@ boot_swap_image(struct boot_loader_state *state, struct boot_status *bs)
                 boot_enc_set_key(BOOT_CURR_ENC(state), slot, bs);
 #ifdef MCUBOOT_ENC_SCRATCH
                 if(slot == BOOT_SECONDARY_SLOT) {
+                    memcpy(bs->enckey[2], bs->enckey[1], BOOT_ENC_KEY_SIZE);
                     boot_enc_set_key(BOOT_CURR_ENC(state), 2, bs);
                 }
 #endif
