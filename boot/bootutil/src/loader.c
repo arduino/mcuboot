@@ -889,6 +889,23 @@ boot_erase_region(const struct flash_area *fap, uint32_t off, uint32_t sz)
 {
     return flash_area_erase(fap, off, sz);
 }
+#include "bootutil/crypto/sha256.h"
+
+int
+boot_sha256_region(uint8_t *chunk, uint32_t chunk_sz)
+{
+    bootutil_sha256_context sha256_ctx;
+    uint8_t hash_result[32] = {0xFF};
+
+    bootutil_sha256_init(&sha256_ctx);
+    bootutil_sha256_update(&sha256_ctx,(void*)chunk, chunk_sz);
+    bootutil_sha256_finish(&sha256_ctx, hash_result);
+    bootutil_sha256_drop(&sha256_ctx);
+
+    for (int i = 0; i < 32; i++) {
+        printf("%02X ", hash_result[i]);
+    }
+}
 
 #if !defined(MCUBOOT_DIRECT_XIP) && !defined(MCUBOOT_RAM_LOAD)
 /**
@@ -946,15 +963,21 @@ size_t scratch_blk_off;
         if (rc != 0) {
             return BOOT_EFLASH;
         }
+
+        printf("rr %d -> %d ", flash_area_get_id(fap_src),flash_area_get_id(fap_dst));
+        boot_sha256_region(buf, chunk_sz);
+        printf("0x%08X 0x%08X\n", off_src + bytes_copied, chunk_sz);
+
 #ifdef MCUBOOT_ENC_SCRATCH
         scratch_blk_off = 0;
         if (flash_area_get_id(fap_src) == FLASH_AREA_IMAGE_SCRATCH &&
             boot_enc_valid(BOOT_CURR_ENC(state), image_index, fap_src)) {
-            printf("rb %d -> %d 0x%02X 0x%02X 0x%02X 0x%02X 0x%08X 0x%08X 0x%08X\n", flash_area_get_id(fap_src), flash_area_get_id(fap_dst), buf[0], buf[1], buf[2], buf[3],  off_src + bytes_copied, scratch_blk_off, chunk_sz);
             boot_encrypt(BOOT_CURR_ENC(state), image_index, fap_src,
                         (off_src + bytes_copied), chunk_sz,
                         scratch_blk_off, buf);
-            printf("ra %d -> %d 0x%02X 0x%02X 0x%02X 0x%02X\n", flash_area_get_id(fap_src), flash_area_get_id(fap_dst), buf[0], buf[1], buf[2], buf[3]);
+            printf("re %d -> %d ", flash_area_get_id(fap_src),flash_area_get_id(fap_dst));
+            boot_sha256_region(buf, chunk_sz);
+            printf("0x%08X 0x%08X 0x%08X\n", off_src + bytes_copied, scratch_blk_off, chunk_sz);
         }
 #endif
 
@@ -996,7 +1019,6 @@ size_t scratch_blk_off;
                     idx = 0;
                     blk_sz = chunk_sz;
                     blk_off = (abs_off - hdr->ih_hdr_size) & 0xf;
-                    printf("abs off 0x%08X header 0x%08X\n", abs_off, hdr->ih_hdr_size);
                 }
 
                 if (blk_sz > 0)
@@ -1010,11 +1032,21 @@ size_t scratch_blk_off;
                             blk_sz = tlv_off - abs_off;
                         }
                     }
-                    printf("bb %d -> %d 0x%02X 0x%02X 0x%02X 0x%02X 0x%08X 0x%08X 0x%08X\n", flash_area_get_id(fap_src),  flash_area_get_id(fap_dst), buf[0], buf[1], buf[2], buf[3], (abs_off + idx) - hdr->ih_hdr_size, blk_off, blk_sz);
+
+
+                    printf("bb %d -> %d ", flash_area_get_id(fap_src), flash_area_get_id(fap_dst));
+                    boot_sha256_region(&buf[idx], blk_sz);
+                    printf("0x%08X 0x%08X 0x%08X\n", (abs_off + idx) - hdr->ih_hdr_size, blk_off, blk_sz);
+
+
                     boot_encrypt(BOOT_CURR_ENC(state), image_index, fap_src,
                             (abs_off + idx) - hdr->ih_hdr_size, blk_sz,
                             blk_off, &buf[idx]);
-                    printf("aa %d -> %d 0x%02X 0x%02X 0x%02X 0x%02X\n", flash_area_get_id(fap_src),  flash_area_get_id(fap_dst), buf[0], buf[1], buf[2], buf[3]);
+
+
+                    printf("aa %d -> %d ", flash_area_get_id(fap_src), flash_area_get_id(fap_dst));
+                    boot_sha256_region(&buf[idx], blk_sz);
+                    printf("\n");
                 }
             }
         }
@@ -1023,13 +1055,18 @@ size_t scratch_blk_off;
 #ifdef MCUBOOT_ENC_SCRATCH
         if (flash_area_get_id(fap_dst) == FLASH_AREA_IMAGE_SCRATCH &&
             boot_enc_valid(BOOT_CURR_ENC(state), image_index, fap_dst)) {
-            printf("wb %d -> %d 0x%02X 0x%02X 0x%02X 0x%02X 0x%08X 0x%08X 0x%08X\n",  flash_area_get_id(fap_src), flash_area_get_id(fap_dst), buf[0], buf[1], buf[2], buf[3], off_dst + bytes_copied, scratch_blk_off, chunk_sz);
+            printf("we %d -> %d ",  flash_area_get_id(fap_src), flash_area_get_id(fap_dst));
+            boot_sha256_region(buf, chunk_sz);
             boot_encrypt(BOOT_CURR_ENC(state), image_index, fap_dst,
                         (off_dst + bytes_copied), chunk_sz,
                         scratch_blk_off, buf);
-            printf("wa %d -> %d 0x%02X 0x%02X 0x%02X 0x%02X\n",  flash_area_get_id(fap_src), flash_area_get_id(fap_dst), buf[0], buf[1], buf[2], buf[3]);
+            printf("0x%08X 0x%08X 0x%08X\n", off_dst + bytes_copied, scratch_blk_off, chunk_sz);
         }
 #endif
+
+        printf("ww %d -> %d ", flash_area_get_id(fap_src), flash_area_get_id(fap_dst));
+        boot_sha256_region(buf, chunk_sz);
+        printf("0x%08X 0x%08X\n", off_dst + bytes_copied, chunk_sz);
 
         rc = flash_area_write(fap_dst, off_dst + bytes_copied, buf, chunk_sz);
         if (rc != 0) {
