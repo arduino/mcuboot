@@ -409,6 +409,7 @@ error:
 int
 boot_enc_init(struct enc_key_data *enc_state, uint8_t slot)
 {
+    printf("ki %d -> %d %p \n", slot, slot, &enc_state[slot].aes_ctr);
     bootutil_aes_ctr_init(&enc_state[slot].aes_ctr);
     return 0;
 }
@@ -432,6 +433,12 @@ boot_enc_set_key(struct enc_key_data *enc_state, uint8_t slot,
         enc_state[slot].valid = 0;
         return -1;
     }
+
+    printf("ks %d -> %d ", slot, slot);
+    for (int i = 0; i < BOOT_ENC_KEY_SIZE; i++) {
+      printf("%02X ", bs->enckey[slot][i]);
+    }
+    printf("\n");
 
     enc_state[slot].valid = 1;
 
