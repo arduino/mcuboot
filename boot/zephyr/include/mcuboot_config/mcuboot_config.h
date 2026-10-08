@@ -380,8 +380,8 @@
 #define MCUBOOT_SERIAL_RECOVERY
 #endif
 
-#if (defined(CONFIG_BOOT_USB_DFU_WAIT) || \
-     defined(CONFIG_BOOT_USB_DFU_GPIO))
+#if (defined(CONFIG_BOOT_USB_DFU_WAIT) || defined(CONFIG_BOOT_USB_DFU_GPIO) || \
+     defined(CONFIG_BOOT_USB_DFU_BOOT_MODE))
 #define MCUBOOT_USB_DFU
 #endif
 
@@ -429,11 +429,12 @@
  */
 #define MCUBOOT_USE_FLASH_AREA_GET_SECTORS
 
-#if (defined(CONFIG_BOOT_USB_DFU_WAIT) || \
-     defined(CONFIG_BOOT_USB_DFU_GPIO))
-#  ifndef CONFIG_MULTITHREADING
-#    error "USB DFU Requires MULTITHREADING"
-#  endif
+#if (defined(CONFIG_BOOT_USB_DFU_WAIT) ||                                      \
+     defined(CONFIG_BOOT_USB_DFU_GPIO)) ||                                     \
+     defined(CONFIG_BOOT_USB_DFU_BOOT_MODE)
+#ifndef CONFIG_MULTITHREADING
+#error "USB DFU Requires MULTITHREADING"
+#endif
 #endif
 
 /* If set to non-0 it will use logical sectors rather than querying

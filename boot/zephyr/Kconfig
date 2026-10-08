@@ -1130,6 +1130,12 @@ config BOOT_USB_DFU_GPIO
 	help
 	  If y, MCUboot uses GPIO to detect whether to invoke USB DFU.
 
+config BOOT_USB_DFU_BOOT_MODE
+	bool "Use retention to detect whether to trigger DFU mode"
+	help
+      If y, MCUboot checks Zephyr's retention boot-mode subsystem to
+      decide whether to invoke USB DFU mode.
+
 config BOOT_USB_DFU_DETECT_DELAY
 	int "Serial detect pin detection delay time [ms]"
 	depends on BOOT_USB_DFU_GPIO

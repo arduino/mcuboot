@@ -222,11 +222,33 @@ static void boot_serial_enter(int inactivity_in_ms)
 }
 #endif
 
+#if defined(CONFIG_BOOT_USB_DFU_BOOT_MODE)
+#include <zephyr/retention/bootmode.h>
+
+static bool check_boot_mode(void)
+{
+    bool rv = false;
+    int boot_mode = bootmode_check(BOOT_MODE_TYPE_BOOTLOADER);
+
+    if (boot_mode < 0) {
+        BOOT_LOG_ERR("Unable to read boot mode (%d)", boot_mode);
+    }
+    if (boot_mode == 1) {
+        BOOT_LOG_INF("Boot mode requests USB DFU");
+        rv = true;
+    }
+    if (bootmode_clear()) {
+        BOOT_LOG_ERR("Unable to clear boot mode");
+    }
+    return rv;
+}
+#endif
 int main(void)
 {
     struct boot_rsp rsp;
     int rc;
-#if defined(CONFIG_BOOT_USB_DFU_GPIO) || defined(CONFIG_BOOT_USB_DFU_WAIT)
+#if defined(CONFIG_BOOT_USB_DFU_GPIO) || defined(CONFIG_BOOT_USB_DFU_WAIT) ||  \
+    defined(CONFIG_BOOT_USB_DFU_BOOT_MODE)
     bool usb_dfu_requested = false;
     bool usb_dfu_forever = false;
 #endif
@@ -234,6 +256,12 @@ int main(void)
     (defined(CONFIG_BOOT_SWAP_USING_SCRATCH) || defined(CONFIG_BOOT_UPGRADE_ONLY) || \
      defined(CONFIG_BOOT_SWAP_USING_OFFSET) || defined(CONFIG_BOOT_SWAP_USING_MOVE))
     bool has_upgrade;
+#endif
+#if defined(CONFIG_BOOT_USB_DFU_BOOT_MODE)
+  if (check_boot_mode()) {
+    usb_dfu_requested = true;
+    usb_dfu_forever = true;
+  }
 #endif
     FIH_DECLARE(fih_rc, FIH_FAILURE);
 
@@ -358,6 +386,50 @@ int main(void)
     (defined(CONFIG_BOOT_SWAP_USING_SCRATCH) || defined(CONFIG_BOOT_UPGRADE_ONLY) || \
      defined(CONFIG_BOOT_SWAP_USING_OFFSET) || defined(CONFIG_BOOT_SWAP_USING_MOVE))
     }
+#endif
+
+#if defined(CONFIG_BOOT_USB_DFU_WAIT)
+    usb_dfu_requested = true;
+#endif
+
+#if defined(CONFIG_BOOT_USB_DFU_GPIO) || defined(CONFIG_BOOT_USB_DFU_WAIT) || \
+    defined(CONFIG_BOOT_USB_DFU_BOOT_MODE)
+    if (usb_dfu_requested) {
+        rc = boot_usb_dfu_enable();
+        if (rc) {
+            BOOT_LOG_ERR("Cannot enable USB: %d", rc);
+        } else {
+            BOOT_LOG_INF("Waiting for USB DFU");
+
+            if (usb_dfu_forever) {
+                boot_usb_dfu_wait(K_FOREVER);
+                BOOT_LOG_INF("USB DFU wait terminated");
+#if defined(CONFIG_BOOT_USB_DFU_WAIT)
+            } else {
+                BOOT_LOG_DBG("Waiting for USB DFU for %dms", CONFIG_BOOT_USB_DFU_WAIT_DELAY_MS);
+                mcuboot_status_change(MCUBOOT_STATUS_USB_DFU_WAITING);
+                boot_usb_dfu_wait(K_MSEC(CONFIG_BOOT_USB_DFU_WAIT_DELAY_MS));
+                BOOT_LOG_INF("USB DFU wait time elapsed");
+                mcuboot_status_change(MCUBOOT_STATUS_USB_DFU_TIMED_OUT);
+#endif
+            }
+        }
+    }
+#endif
+
+#ifdef CONFIG_BOOT_SERIAL_WAIT_FOR_DFU
+    /* Initialize the boot console, so we can already fill up our buffers while
+     * waiting for the boot image check to finish. This image check, can take
+     * some time, so it's better to reuse thistime to already receive the
+     * initial mcumgr command(s) into our buffers
+     */
+    rc = boot_console_init();
+    int timeout_in_ms = CONFIG_BOOT_SERIAL_WAIT_FOR_DFU_TIMEOUT;
+    uint32_t start = k_uptime_get_32();
+
+#ifdef CONFIG_MCUBOOT_INDICATION_LED
+    io_led_set(1);
+#endif
 #endif
 
     BOOT_HOOK_GO_CALL_FIH(boot_go_hook, FIH_BOOT_HOOK_REGULAR, fih_rc, &rsp);
