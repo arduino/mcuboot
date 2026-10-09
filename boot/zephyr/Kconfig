@@ -1145,6 +1145,18 @@ config BOOT_USB_DFU_NO_APPLICATION
 	  Allows for entering USB DFU recovery mode if there is no bootable
 	  application that the bootloader can jump to.
 
+config BOOT_USB_DFU_ERASE_TRAILING_AREA
+	bool "Erase flash from end of downloaded image to end of partition"
+	depends on !SINGLE_APPLICATION_SLOT
+	depends on FLASH_PAGE_LAYOUT
+	help
+	  If y, once a USB DFU download completes, MCUboot erases the flash
+	  region between the end of the downloaded image and the start of the
+	  image trailer (the trailer itself, which holds the swap/update
+	  status information, is left untouched). This prevents stale data
+	  left over from a previous, larger image from remaining in the slot
+	  partition after a smaller image is downloaded.
+
 endif # BOOT_USB_DFU
 
 rsource "Kconfig.serial_recovery"

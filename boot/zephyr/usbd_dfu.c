@@ -13,6 +13,13 @@
 #include "bootutil/bootutil_public.h"
 #include "usbd_dfu.h"
 
+#if defined(CONFIG_BOOT_USB_DFU_ERASE_TRAILING_AREA)
+#include <zephyr/drivers/flash.h>
+#include <zephyr/storage/flash_map.h>
+#include <zephyr/dfu/mcuboot.h>
+#include <sysflash/sysflash.h>
+#endif
+
 BOOT_LOG_MODULE_DECLARE(mcuboot);
 
 USBD_DEVICE_DEFINE(boot_dfu_usbd,
@@ -197,6 +204,141 @@ struct usbd_context *boot_usb_dfu_get_context(void)
 	return &boot_dfu_usbd;
 }
 
+#if defined(CONFIG_BOOT_USB_DFU_ERASE_TRAILING_AREA)
+/*
+ * Erase the unused flash between the end of the just-downloaded image
+ * (header + body + TLVs) and the start of the image trailer in the
+ * secondary slot. This removes any leftover data from a previously
+ * downloaded image that was larger than the current one. The trailer
+ * itself (swap status fields and magic) is never touched.
+ */
+static void boot_usb_dfu_erase_trailing_area(void)
+{
+	const struct flash_area *fa;
+	struct image_header hdr;
+	struct image_tlv_info tlv_info;
+	const struct flash_parameters *fparams;
+	uint32_t image_end;
+	uint32_t trailer_off;
+	uint32_t erase_start;
+	uint32_t erase_end;
+	int rc;
+
+	rc = flash_area_open(FLASH_AREA_IMAGE_SECONDARY(0), &fa);
+	if (rc) {
+		BOOT_LOG_ERR("Failed to open secondary slot: %d", rc);
+		return;
+	}
+
+	rc = flash_area_read(fa, 0, &hdr, sizeof(hdr));
+	if (rc || hdr.ih_magic != IMAGE_MAGIC) {
+		BOOT_LOG_ERR("Downloaded image has no valid header, skipping erase");
+		goto done;
+	}
+
+	/* Walk past the image body and TLV area(s) to find where the image ends. */
+	image_end = hdr.ih_hdr_size + hdr.ih_img_size;
+
+	rc = flash_area_read(fa, image_end, &tlv_info, sizeof(tlv_info));
+	if (rc) {
+		BOOT_LOG_ERR("Failed to read TLV info: %d", rc);
+		goto done;
+	}
+
+	if (tlv_info.it_magic == IMAGE_TLV_PROT_INFO_MAGIC) {
+		if (hdr.ih_protect_tlv_size != tlv_info.it_tlv_tot) {
+			BOOT_LOG_ERR("Protected TLV size mismatch, skipping erase");
+			goto done;
+		}
+
+		image_end += tlv_info.it_tlv_tot;
+
+		rc = flash_area_read(fa, image_end, &tlv_info, sizeof(tlv_info));
+		if (rc) {
+			BOOT_LOG_ERR("Failed to read TLV info: %d", rc);
+			goto done;
+		}
+	} else if (hdr.ih_protect_tlv_size != 0) {
+		BOOT_LOG_ERR("Missing protected TLV info, skipping erase");
+		goto done;
+	}
+
+	if (tlv_info.it_magic != IMAGE_TLV_INFO_MAGIC) {
+		BOOT_LOG_ERR("Invalid TLV info magic, skipping erase");
+		goto done;
+	}
+
+	image_end += tlv_info.it_tlv_tot;
+
+	/*
+	 * Start of the image trailer status fields; never erase past this.
+	 * This mirrors the boundary already used by Zephyr's own flash_img
+	 * progressive-erase logic (scramble_mcuboot_trailer()) and is
+	 * independent of the swap algorithm: it covers only the
+	 * swap_type/copy_done/image_ok/swap_size fields and the trailer
+	 * magic, not the much larger, swap-algorithm-only per-sector swap
+	 * status area, which is unused in overwrite-only mode and holds
+	 * only in-progress swap bookkeeping in swap modes.
+	 */
+	trailer_off = (uint32_t)boot_get_trailer_status_offset(fa->fa_size);
+
+	if (image_end >= trailer_off) {
+		/* Image fills (almost) the whole slot, nothing to erase. */
+		goto done;
+	}
+
+	fparams = flash_get_parameters(fa->fa_dev);
+
+	if (flash_params_get_erase_cap(fparams) & FLASH_ERASE_C_EXPLICIT) {
+		struct flash_pages_info page;
+
+		/* Round the start up to the next page so no image byte is erased. */
+		rc = flash_get_page_info_by_offs(fa->fa_dev, fa->fa_off + image_end, &page);
+		if (rc) {
+			BOOT_LOG_ERR("Failed to get page info: %d", rc);
+			goto done;
+		}
+
+		if ((uint32_t)(page.start_offset - fa->fa_off) == image_end) {
+			erase_start = image_end;
+		} else {
+			erase_start = (uint32_t)(page.start_offset - fa->fa_off) + page.size;
+		}
+
+		/*
+		 * Round the end down to the page holding the trailer, so the
+		 * trailer is never touched.
+		 */
+		rc = flash_get_page_info_by_offs(fa->fa_dev, fa->fa_off + trailer_off, &page);
+		if (rc) {
+			BOOT_LOG_ERR("Failed to get page info: %d", rc);
+			goto done;
+		}
+
+		erase_end = (uint32_t)(page.start_offset - fa->fa_off);
+	} else {
+		uint32_t write_block_size = fparams->write_block_size;
+
+		erase_start = (image_end + write_block_size - 1) & ~(write_block_size - 1);
+		erase_end = trailer_off & ~(write_block_size - 1);
+	}
+
+	if (erase_start >= erase_end) {
+		goto done;
+	}
+
+	rc = flash_area_flatten(fa, erase_start, erase_end - erase_start);
+	if (rc) {
+		BOOT_LOG_ERR("Failed to erase trailing area: %d", rc);
+	} else {
+		BOOT_LOG_INF("Erased trailing area [0x%x, 0x%x)", erase_start, erase_end);
+	}
+
+done:
+	flash_area_close(fa);
+}
+#endif /* CONFIG_BOOT_USB_DFU_ERASE_TRAILING_AREA */
+
 void boot_usb_dfu_wait(k_timeout_t delay)
 {
 	if (k_sem_take(&boot_dfu_complete, delay) != 0) {
@@ -206,6 +348,10 @@ void boot_usb_dfu_wait(k_timeout_t delay)
 	BOOT_LOG_INF("USB DFU completed");
 
 #if !defined(CONFIG_SINGLE_APPLICATION_SLOT)
+#if defined(CONFIG_BOOT_USB_DFU_ERASE_TRAILING_AREA)
+	boot_usb_dfu_erase_trailing_area();
+#endif
+
 	/* The DFU backend only writes the image into the secondary slot. Unless
 	 * the swap is requested here the download is silently ignored on the
 	 * next boot.
