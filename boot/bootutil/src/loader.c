@@ -972,7 +972,9 @@ boot_copy_image(struct boot_loader_state *state, struct boot_status *bs)
 #if defined(MCUBOOT_OVERWRITE_ONLY_FAST) || defined(MCUBOOT_SWAP_USING_MOVE) || defined(MCUBOOT_SWAP_USING_OFFSET)
         if ((size + this_size) >= src_size) {
             size += src_size - size;
-            size += BOOT_WRITE_SZ(state) - (size % BOOT_WRITE_SZ(state));
+            if ((size % BOOT_WRITE_SZ(state)) != 0) {
+                size += BOOT_WRITE_SZ(state) - (size % BOOT_WRITE_SZ(state));
+            }
             break;
         }
 #endif
