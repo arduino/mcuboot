@@ -258,15 +258,24 @@ int main(void)
     bool has_upgrade;
 #endif
 #if defined(CONFIG_BOOT_USB_DFU_BOOT_MODE)
-  if (check_boot_mode()) {
-    usb_dfu_requested = true;
-    usb_dfu_forever = true;
-  }
+    bool boot_mode_requested = check_boot_mode();
+    if (boot_mode_requested) {
+        usb_dfu_requested = true;
+        usb_dfu_forever = true;
+    }
 #endif
     FIH_DECLARE(fih_rc, FIH_FAILURE);
 
+#if defined(CONFIG_BOOT_USB_DFU_BOOT_MODE) && \
+    defined(CONFIG_BOOT_USB_DFU_AVOID_WATCHDOG)
+  if (!boot_mode_requested) {
     MCUBOOT_WATCHDOG_SETUP();
     MCUBOOT_WATCHDOG_FEED();
+  }
+#else
+    MCUBOOT_WATCHDOG_SETUP();
+    MCUBOOT_WATCHDOG_FEED();
+#endif
 
 #if !defined(MCUBOOT_DIRECT_XIP)
     BOOT_LOG_INF("Starting bootloader");

@@ -1134,7 +1134,15 @@ config BOOT_USB_DFU_BOOT_MODE
 	bool "Use retention to detect whether to trigger DFU mode"
 	help
       If y, MCUboot checks Zephyr's retention boot-mode subsystem to
-      decide whether to invoke USB DFU mode.
+      decide whether to invoke USB DFU mode. It automatically waits indefinitely
+		for DFU updates.
+
+config BOOT_USB_DFU_AVOID_WATCHDOG
+	bool "Avoid start watchdog if usb boot mode is selected"
+	depends on BOOT_USB_DFU_BOOT_MODE
+	help
+		Do not start watchdog even if configured if the reset cause
+		is watchdog and dfu boot mode is selected
 
 config BOOT_USB_DFU_DETECT_DELAY
 	int "Serial detect pin detection delay time [ms]"
