@@ -392,6 +392,14 @@ int main(void)
     usb_dfu_requested = true;
 #endif
 
+#if defined(CONFIG_BOOT_USB_DFU_BOOT_MODE)
+#ifdef CONFIG_MCUBOOT_INDICATION_LED
+    if(boot_mode_requested) {
+        io_led_set(1);
+    }
+#endif
+#endif
+
 #if defined(CONFIG_BOOT_USB_DFU_GPIO) || defined(CONFIG_BOOT_USB_DFU_WAIT) || \
     defined(CONFIG_BOOT_USB_DFU_BOOT_MODE)
     if (usb_dfu_requested) {
@@ -499,6 +507,11 @@ int main(void)
     }
 #endif
 
+#if defined(CONFIG_BOOT_USB_DFU_BOOT_MODE)
+#ifdef CONFIG_MCUBOOT_INDICATION_LED
+        io_led_set(0);
+#endif
+#endif
     if (FIH_NOT_EQ(fih_rc, FIH_SUCCESS)) {
         BOOT_LOG_ERR("Unable to find bootable image");
 
