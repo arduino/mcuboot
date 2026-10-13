@@ -1195,6 +1195,18 @@ config MCUBOOT_INDICATION_LED
 	  mcuboot-led0 alias must be set in the device's .dts
 	  definitions for this to work.
 
+config MCUBOOT_INDICATION_LED_BLINK_FADING
+	bool "Make the indication LED blinking with fading when device is in DFU"
+	select PWM
+	depends on MCUBOOT_SERIAL || BOOT_USB_DFU
+	depends on BOOT_USB_DFU_BOOT_MODE
+	help
+	  Device activates the LED while in bootloader mode.
+	  The LED blinks with fading effect while the DFU mode is enable via
+	  retention.
+	  mcuboot-fade-led0 alias must be set in the device's .dts
+	  definitions for this to work.
+
 rsource "Kconfig.firmware_loader"
 
 config BOOT_INTR_VEC_RELOC

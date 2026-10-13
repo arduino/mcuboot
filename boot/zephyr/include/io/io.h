@@ -30,6 +30,16 @@ extern "C" {
 #endif
 
 /*
+ * start the configured led blinking with fading effect
+ */
+void io_led_start_blink(void);
+
+/*
+ * start the configured led blinking with fading effect
+ */
+void io_led_stop_blink(void);
+
+/*
  * Initialises the configured LED.
  */
 void io_led_init(void);
