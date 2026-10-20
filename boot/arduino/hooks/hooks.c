@@ -32,7 +32,7 @@
 
 BUILD_ASSERT(SLOT_ABS(slot0_partition) == 0x0C000000,
 	     "slot0 moved: keep the variant's mcuboot.overlay and -common.overlay in sync");
-BUILD_ASSERT(SLOT_ABS(slot1_partition) == 0x0C080000,
+BUILD_ASSERT(SLOT_ABS(slot1_partition) == 0x0C100000,
 	     "slot1 moved: keep the variant's mcuboot.overlay and -common.overlay in sync");
 
 /* --- Double tap -------------------------------------------------------------- */
