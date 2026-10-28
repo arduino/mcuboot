@@ -37,7 +37,7 @@
 
 #include "do_boot.h"
 
-#ifdef MCUBOOT_SERIAL_INACTIVITY_TIMEOUT
+#if defined(MCUBOOT_SERIAL_INACTIVITY_TIMEOUT) || defined(CONFIG_BOOT_USB_DFU_NO_APPLICATION)
 #include <zephyr/sys/reboot.h>
 #endif
 
@@ -532,12 +532,27 @@ int main(void)
          */
         boot_serial_enter(0);
 #elif defined(CONFIG_BOOT_USB_DFU_NO_APPLICATION)
+#if defined(CONFIG_BOOT_USB_DFU_BOOT_MODE) && defined(CONFIG_BOOT_USB_DFU_AVOID_WATCHDOG) && \
+    defined(CONFIG_BOOT_WATCHDOG_SETUP_AT_BOOT)
+        if (!boot_mode_requested) {
+            /* The watchdog is running and would cut the download short:
+             * enter DFU again through the boot mode, which keeps it off.
+             */
+            if (bootmode_set(BOOT_MODE_TYPE_BOOTLOADER) == 0) {
+                sys_reboot(SYS_REBOOT_COLD);
+            }
+        }
+#endif
         rc = boot_usb_dfu_enable();
         if (rc && rc != -EALREADY) {
             BOOT_LOG_ERR("Cannot enable USB");
         } else {
             BOOT_LOG_INF("Waiting for USB DFU");
             boot_usb_dfu_wait(K_FOREVER);
+#if defined(CONFIG_BOOT_USB_DFU_DIRECT_PRIMARY)
+            /* The download is final: boot it */
+            sys_reboot(SYS_REBOOT_COLD);
+#endif
         }
 #endif
 

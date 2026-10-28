@@ -417,6 +417,8 @@ void boot_usb_dfu_wait(k_timeout_t delay)
 
 #if defined(CONFIG_BOOT_USB_DFU_DIRECT_PRIMARY)
 	boot_usb_dfu_drop_swap_state();
+	/* Let the host read the final DFU status before USB goes away */
+	k_msleep(2000);
 #else
 	/* The DFU backend only writes the image into the secondary slot. Unless
 	 * the swap is requested here the download is silently ignored on the

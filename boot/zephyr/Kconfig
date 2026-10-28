@@ -1174,6 +1174,7 @@ config BOOT_USB_DFU_ERASE_TRAILING_AREA
 config BOOT_USB_DFU_DIRECT_PRIMARY
 	bool "Downloaded image is final: do not request a swap"
 	depends on !SINGLE_APPLICATION_SLOT
+	select REBOOT
 	help
 	  MCUboot's DFU backend writes the image straight into the primary
 	  slot. If y, once the download completes MCUboot erases the primary
