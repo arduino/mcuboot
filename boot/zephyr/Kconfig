@@ -1171,6 +1171,17 @@ config BOOT_USB_DFU_ERASE_TRAILING_AREA
 	  left over from a previous, larger image from remaining in the slot
 	  partition after a smaller image is downloaded.
 
+config BOOT_USB_DFU_DIRECT_PRIMARY
+	bool "Downloaded image is final: do not request a swap"
+	depends on !SINGLE_APPLICATION_SLOT
+	help
+	  MCUboot's DFU backend writes the image straight into the primary
+	  slot. If y, once the download completes MCUboot erases the primary
+	  trailer and the secondary slot's headers and trailer instead of
+	  marking the secondary slot pending, so the next boot runs the
+	  downloaded image as is. Use with swap modes, where a pending request
+	  would swap in whatever the secondary slot still holds.
+
 endif # BOOT_USB_DFU
 
 rsource "Kconfig.serial_recovery"

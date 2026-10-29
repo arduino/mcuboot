@@ -13,11 +13,15 @@
 #include "bootutil/bootutil_public.h"
 #include "usbd_dfu.h"
 
-#if defined(CONFIG_BOOT_USB_DFU_ERASE_TRAILING_AREA)
+#if defined(CONFIG_BOOT_USB_DFU_ERASE_TRAILING_AREA) || defined(CONFIG_BOOT_USB_DFU_DIRECT_PRIMARY)
 #include <zephyr/drivers/flash.h>
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/dfu/mcuboot.h>
 #include <sysflash/sysflash.h>
+#endif
+
+#if defined(CONFIG_BOOT_USB_DFU_DIRECT_PRIMARY)
+#include "flash_map_backend/flash_map_backend.h"
 #endif
 
 BOOT_LOG_MODULE_DECLARE(mcuboot);
@@ -339,6 +343,65 @@ done:
 }
 #endif /* CONFIG_BOOT_USB_DFU_ERASE_TRAILING_AREA */
 
+#if defined(CONFIG_BOOT_USB_DFU_DIRECT_PRIMARY)
+/* Erase the MCUboot sector at off (negative: counted from the end of the area) */
+static int boot_usb_dfu_erase_sector(const struct flash_area *fa, off_t off)
+{
+	struct flash_sector sector;
+	int rc;
+
+	if (off < 0) {
+		off += flash_area_get_size(fa);
+	}
+
+	rc = flash_area_get_sector(fa, off, &sector);
+	if (rc == 0) {
+		rc = flash_area_flatten(fa, flash_sector_get_off(&sector),
+					flash_sector_get_size(&sector));
+	}
+
+	return rc;
+}
+
+/*
+ * The download went straight into the primary slot: drop every swap state so
+ * the next boot runs it as is, instead of swapping in (or reverting to) what
+ * the secondary slot still holds.
+ */
+static void boot_usb_dfu_drop_swap_state(void)
+{
+	const struct flash_area *pri;
+	const struct flash_area *sec;
+	struct flash_sector first;
+	int rc;
+
+	rc = flash_area_open(FLASH_AREA_IMAGE_PRIMARY(0), &pri);
+	if (rc == 0) {
+		rc = boot_usb_dfu_erase_sector(pri, -1);
+		flash_area_close(pri);
+	}
+	if (rc) {
+		BOOT_LOG_ERR("Failed to erase primary trailer: %d", rc);
+	}
+
+	rc = flash_area_open(FLASH_AREA_IMAGE_SECONDARY(0), &sec);
+	if (rc == 0) {
+		/* An image header can sit in the first or (swap-offset) second sector */
+		rc = boot_usb_dfu_erase_sector(sec, 0);
+		if (rc == 0 && flash_area_get_sector(sec, 0, &first) == 0) {
+			rc = boot_usb_dfu_erase_sector(sec, flash_sector_get_size(&first));
+		}
+		if (rc == 0) {
+			rc = boot_usb_dfu_erase_sector(sec, -1);
+		}
+		flash_area_close(sec);
+	}
+	if (rc) {
+		BOOT_LOG_ERR("Failed to erase secondary slot state: %d", rc);
+	}
+}
+#endif /* CONFIG_BOOT_USB_DFU_DIRECT_PRIMARY */
+
 void boot_usb_dfu_wait(k_timeout_t delay)
 {
 	if (k_sem_take(&boot_dfu_complete, delay) != 0) {
@@ -352,6 +415,9 @@ void boot_usb_dfu_wait(k_timeout_t delay)
 	boot_usb_dfu_erase_trailing_area();
 #endif
 
+#if defined(CONFIG_BOOT_USB_DFU_DIRECT_PRIMARY)
+	boot_usb_dfu_drop_swap_state();
+#else
 	/* The DFU backend only writes the image into the secondary slot. Unless
 	 * the swap is requested here the download is silently ignored on the
 	 * next boot.
@@ -359,5 +425,6 @@ void boot_usb_dfu_wait(k_timeout_t delay)
 	if (boot_set_pending(IS_ENABLED(CONFIG_BOOT_USB_DFU_PERMANENT_DOWNLOAD))) {
 		BOOT_LOG_ERR("Failed to request upgrade to the downloaded image");
 	}
+#endif
 #endif
 }
